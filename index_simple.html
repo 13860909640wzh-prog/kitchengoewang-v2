@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>大圣逃亡 - 斗战胜佛逃离如来手掌</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #000;
+            overflow: hidden;
+            touch-action: manipulation;
+            user-select: none;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        canvas {
+            display: block;
+            background-color: #87CEEB;
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 10;
+            transition: opacity 0.3s ease;
+        }
+        
+        .screen-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 80%;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        h1, h2 {
+            color: #FF4500;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        
+        p {
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        
+        .btn {
+            background-color: #FF4500;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 10px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+            min-width: 150px;
+        }
+        
+        .btn:hover {
+            background-color: #FF6347;
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background-color: #FFD700;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #FFA500;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        ul {
+            text-align: left;
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+        
+        .hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 5;
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        }
+        
+        .score {
+            font-size: 20px;
+        }
+        
+        .energy-container {
+            display: flex;
+            align-items: center;
+        }
+        
+        .energy-label {
+            margin-right: 10px;
+        }
+        
+        .energy-bar {
+            width: 100px;
+            height: 10px;
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            overflow: hidden;
+            margin-right: 10px;
+        }
+        
+        .energy-fill {
+            height: 100%;
+            background-color: #FFD700;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .character {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 20px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        @media (max-width: 600px) {
+            .screen-content {
+                max-width: 90%;
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 20px;
+            }
+            
+            .btn {
+                padding: 10px 20px;
+                font-size: 14px;
+                min-width: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        
+        <!-- 开始屏幕 -->
+        <div id="startScreen" class="screen">
+            <div class="screen-content">
+                <h1>《大圣逃亡》</h1>
+                <p>斗战胜佛逃离如来手掌的2D无限跑酷</p>
+                <div>
+                    <img id="heroImage" src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/aa5d1d4d7c8c4488a2fac707ee123af2~tplv-a9rns2rl98-image.image?rcl=20251209140639D5470B6E103BF6B36D73&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767852443&x-signature=q8XgkfhihynErcoLOEfBJ3gbWKs%3D" alt="大圣" class="character">
+                </div>
+                <div>
+                    <button id="startBtn" class="btn">开始游戏</button>
+                </div>
+                <div>
+                    <button id="rulesBtn" class="btn-secondary">游戏规则</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 规则屏幕 -->
+        <div id="rulesScreen" class="screen hidden">
+            <div class="screen-content">
+                <h2>游戏规则</h2>
+                <ul>
+                    <li>点击屏幕跳跃，再次点击进行二段跳</li>
+                    <li>收集小桃子获得1分，大桃子获得5分</li>
+                    <li>收集100积分可获得一次筋斗云冲刺</li>
+                    <li>筋斗云冲刺期间无敌，自动前进10秒</li>
+                    <li>跌落云层缝隙即失败</li>
+                    <li>游戏速度会随时间增加，挑战你的反应能力</li>
+                </ul>
+                <button id="backToStartBtn" class="btn">返回</button>
+            </div>
+        </div>
+        
+        <!-- 游戏界面 HUD -->
+        <div id="gameHUD" class="hud hidden">
+            <div class="score">分数: <span id="scoreDisplay">0</span></div>
+            <div class="energy-container">
+                <span class="energy-label">筋斗云:</span>
+                <div class="energy-bar">
+                    <div id="energyFill" class="energy-fill"></div>
+                </div>
+                <button id="dashBtn" class="btn" style="padding: 5px 10px; font-size: 12px;" disabled>冲刺</button>
+            </div>
+        </div>
+        
+        <!-- 暂停屏幕 -->
+        <div id="pauseScreen" class="screen hidden">
+            <div class="screen-content">
+                <h2>游戏暂停</h2>
+                <button id="resumeBtn" class="btn">继续游戏</button>
+                <button id="restartBtn" class="btn-secondary">重新开始</button>
+                <button id="exitBtn" class="btn">退出游戏</button>
+            </div>
+        </div>
+        
+        <!-- 结束屏幕 -->
+        <div id="gameOverScreen" class="screen hidden">
+            <div class="screen-content">
+                <h2>游戏结束</h2>
+                <p>你的得分</p>
+                <p style="font-size: 32px; color: #FFD700; margin: 10px 0;">
+                    <span id="finalScore">0</span>
+                </p>
+                <div>
+                    <p>最高分</p>
+                    <p style="font-size: 24px; margin: 10px 0;">
+                        <span id="highScore">0</span>
+                    </p>
+                </div>
+                <button id="playAgainBtn" class="btn">再玩一次</button>
+                <button id="shareBtn" class="btn-secondary">分享成绩</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 游戏常量
+        const GAME_WIDTH = 800;
+        const GAME_HEIGHT = 600;
+        const GRAVITY = 800;
+        const JUMP_FORCE = 400;
+        const DOUBLE_JUMP_FORCE = 350;
+        const MAX_FALL_SPEED = 500;
+        const INITIAL_SPEED = 150;
+        const MAX_SPEED = 350;
+        const SPEED_UP_DURATION = 150;
+        const DASH_SPEED = 500;
+        const DASH_DURATION = 10;
+        const DASH_COST = 100;
+        const PLATFORM_WIDTH = 64;
+        const PLATFORM_HEIGHT = 32;
+        const PLAYER_WIDTH = 64;
+        const PLAYER_HEIGHT = 64;
+        const PEACH_SCORE = 1;
+        const BIG_PEACH_SCORE = 5;
+        
+        // 游戏状态
+        const GAME_STATE = {
+            MENU: 'menu',
+            PLAYING: 'playing',
+            PAUSED: 'paused',
+            GAME_OVER: 'gameOver'
+        };
+        
+        // 玩家状态
+        const PLAYER_STATE = {
+            IDLE: 'idle',
+            RUNNING: 'running',
+            JUMPING: 'jumping',
+            DOUBLE_JUMPING: 'doubleJumping',
+            DASHING: 'dashing',
+            FALLING: 'falling',
+            DEAD: 'dead'
+        };
+        
+        // 游戏对象
+        let canvas, ctx;
+        let gameState = GAME_STATE.MENU;
+        let score = 0;
+        let highScore = 0;
+        let gameSpeed = INITIAL_SPEED;
+        let gameTime = 0;
+        let lastTime = 0;
+        let dashEnergy = 0;
+        let isDashing = false;
+        let dashTime = 0;
+        let platforms = [];
+        let peaches = [];
+        let bigPeaches = [];
+        let particles = [];
+        let keys = {};
+        let touchStartY = 0;
+        let gameLoopId = null;
+        
+        // 资源加载
+        const images = {};
+        const sounds = {};
+        
+        // 玩家对象
+        const player = {
+            x: 100,
+            y: GAME_HEIGHT / 2,
+            width: PLAYER_WIDTH,
+            height: PLAYER_HEIGHT,
+            velocityY: 0,
+            isOnGround: false,
+            hasDoubleJumped: false,
+            state: PLAYER_STATE.IDLE,
+            
+            update: function(deltaTime) {
+                if (this.state === PLAYER_STATE.DEAD) return;
+                
+                // 应用重力
+                this.velocityY += GRAVITY * deltaTime;
+                if (this.velocityY > MAX_FALL_SPEED) {
+                    this.velocityY = MAX_FALL_SPEED;
+                }
+                
+                // 更新位置
+                this.y += this.velocityY * deltaTime;
+                
+                // 更新状态
+                if (this.velocityY < 0) {
+                    this.state = this.hasDoubleJumped ? PLAYER_STATE.DOUBLE_JUMPING : PLAYER_STATE.JUMPING;
+                } else if (this.velocityY > 50) {
+                    this.state = PLAYER_STATE.FALLING;
+                } else if (this.isOnGround) {
+                    this.state = PLAYER_STATE.RUNNING;
+                }
+                
+                // 检查是否掉落
+                if (this.y > GAME_HEIGHT) {
+                    gameOver();
+                }
+            },
+            
+            jump: function() {
+                if (this.state === PLAYER_STATE.DEAD || isDashing) return;
+                
+                if (this.isOnGround) {
+                    this.velocityY = -JUMP_FORCE;
+                    this.isOnGround = false;
+                    this.hasDoubleJumped = false;
+                    playSound('jump');
+                } else if (!this.hasDoubleJumped) {
+                    this.velocityY = -DOUBLE_JUMP_FORCE;
+                    this.hasDoubleJumped = true;
+                    playSound('doubleJump');
+                }
+            },
+            
+            dash: function() {
+                if (dashEnergy >= DASH_COST && !isDashing) {
+                    isDashing = true;
+                    dashTime = DASH_DURATION;
+                    dashEnergy -= DASH_COST;
+                    this.state = PLAYER_STATE.DASHING;
+                    playSound('dash');
+                    updateDashEnergy();
+                }
+            },
+            
+            draw: function() {
+                ctx.save();
+                
+                // 冲刺时的特效
+                if (isDashing) {
+                    ctx.globalAlpha = 0.8;
+                    ctx.shadowColor = '#FFD700';
+                    ctx.shadowBlur = 15;
+                }
+                
+                // 绘制玩家
+                ctx.drawImage(
+                    images.player,
+                    this.x,
+                    this.y,
+                    this.width,
+                    this.height
+                );
+                
+                ctx.restore();
+            }
+        };
+        
+        // 初始化游戏
+        function init() {
+            console.log('初始化游戏');
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+            
+            // 设置画布尺寸
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // 加载资源
+            loadResources();
+            
+            // 设置事件监听
+            setupEventListeners();
+            
+            // 加载最高分
+            highScore = localStorage.getItem('dasheng-highscore') || 0;
+            document.getElementById('highScore').textContent = highScore;
+            
+            // 显示开始屏幕
+            showScreen('startScreen');
+        }
+        
+        // 调整画布尺寸
+        function resizeCanvas() {
+            const container = document.getElementById('game-container');
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+            
+            // 保持游戏比例
+            const gameRatio = GAME_WIDTH / GAME_HEIGHT;
+            let newWidth, newHeight;
+            
+            if (containerWidth / containerHeight > gameRatio) {
+                newHeight = containerHeight;
+                newWidth = newHeight * gameRatio;
+            } else {
+                newWidth = containerWidth;
+                newHeight = newWidth / gameRatio;
+            }
+            
+            canvas.width = GAME_WIDTH;
+            canvas.height = GAME_HEIGHT;
+            canvas.style.width = `${newWidth}px`;
+            canvas.style.height = `${newHeight}px`;
+        }
+        
+        // 加载游戏资源
+        function loadResources() {
+            console.log('加载游戏资源');
+            // 图片资源
+            const imageSources = {
+                player: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/aa5d1d4d7c8c4488a2fac707ee123af2~tplv-a9rns2rl98-image.image?rcl=20251209140639D5470B6E103BF6B36D73&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767852443&x-signature=q8XgkfhihynErcoLOEfBJ3gbWKs%3D',
+                platform: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/2b144d9be7404f90af718b1076cf9792~tplv-a9rns2rl98-image.image?rcl=20251209140639D5470B6E103BF6B36D73&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767852441&x-signature=6At2neU1xGEs%2Bxie5eaZS2cppYY%3D',
+                peach: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/d9016a6c624549c3936ba7d66a0eebc5~tplv-a9rns2rl98-image.image?rcl=20251209140639D5470B6E103BF6B36D73&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767852443&x-signature=%2BmoByy03URahrWonEGXWyfFikOk%3D',
+                bigPeach: 'https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/50f9d79d2b5b43048a05a45f1920873b~tplv-a9rns2rl98-image.image?rcl=20251209140639D5470B6E103BF6B36D73&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767852454&x-signature=LP5ZR7Skgw8XTd5UkDLp4uAcTo8%3D',
+                background: 'https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/e8fc6ecb26374ee2b54e0389f09d9001~tplv-a9rns2rl98-image.image?rcl=20251209140639D5470B6E103BF6B36D73&rk3s=8e244e95&rrcfp=f06b921b&x-expires=1767852454&x-signature=aGUT1Ym8foLx13ulUpcQHHz9xz0%3D'
+            };
+            
+            let loadedImages = 0;
+            const totalImages = Object.keys(imageSources).length;
+            let allImagesLoaded = false;
+            
+            for (const [key, src] of Object.entries(imageSources)) {
+                images[key] = new Image();
+                images[key].src = src;
+                images[key].onload = () => {
+                    loadedImages++;
+                    console.log(`加载图片: ${key}, 进度: ${loadedImages}/${totalImages}`);
+                    if (loadedImages === totalImages && !allImagesLoaded) {
+                        allImagesLoaded = true;
+                        console.log('所有图片资源已加载');
+                    }
+                };
+                images[key].onerror = () => {
+                    console.error(`加载图片失败: ${key}`);
+                    loadedImages++;
+                    if (loadedImages === totalImages && !allImagesLoaded) {
+                        allImagesLoaded = true;
+                        console.log('图片资源加载完成（部分失败）');
+                    }
+                };
+            }
+            
+            // 音效资源 (使用Web Audio API创建简单的音效)
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // 创建音效函数
+                function createSound(frequency, duration, type = 'sine') {
+                    return function() {
+                        try {
+                            const oscillator = audioContext.createOscillator();
+                            const gainNode = audioContext.createGain();
+                            
+                            oscillator.connect(gainNode);
+                            gainNode.connect(audioContext.destination);
+                            
+                            oscillator.frequency.value = frequency;
+                            oscillator.type = type;
+                            
+                            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+                            
+                            oscillator.start(audioContext.currentTime);
+                            oscillator.stop(audioContext.currentTime + duration);
+                        } catch (e) {
+                            console.error('播放音效失败:', e);
+                        }
+                    };
+                }
+                
+                // 创建音效
+                sounds.jump = createSound(440, 0.1);
+                sounds.doubleJump = createSound(660, 0.15);
+                sounds.collect = createSound(880, 0.1);
+                sounds.bigCollect = createSound(1000, 0.2, 'square');
+                sounds.dash = createSound(220, 0.3, 'sawtooth');
+                sounds.gameOver = createSound(110, 0.5, 'triangle');
+                
+                console.log('音效资源已创建');
+            } catch (e) {
+                console.warn('Web Audio API不受支持，无法播放音效:', e);
+                // 创建空函数作为回退
+                sounds.jump = sounds.doubleJump = sounds.collect = sounds.bigCollect = sounds.dash = sounds.gameOver = () => {};
+            }
+        }
+        
+        // 设置事件监听
+        function setupEventListeners() {
+            console.log('设置事件监听');
+            
+            // 键盘事件
+            window.addEventListener('keydown', (e) => {
+                keys[e.code] = true;
+                
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    if (gameState === GAME_STATE.PLAYING) {
+                        player.jump();
+                    }
+                } else if (e.code === 'KeyP' && gameState === GAME_STATE.PLAYING) {
+                    togglePause();
+                } else if (e.code === 'KeyR' && gameState === GAME_STATE.GAME_OVER) {
+                    startGame();
+                }
+            });
+            
+            window.addEventListener('keyup', (e) => {
+                keys[e.code] = false;
+            });
+            
+            // 触摸事件
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                touchStartY = e.touches[0].clientY;
+            });
+            
+            canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+            });
+            
+            canvas.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                if (gameState === GAME_STATE.PLAYING) {
+                    player.jump();
+                }
+            });
+            
+            // 点击事件
+            canvas.addEventListener('click', (e) => {
+                if (gameState === GAME_STATE.PLAYING) {
+                    player.jump();
+                }
+            });
+            
+            // 按钮事件 - 使用事件委托
+            document.addEventListener('click', (e) => {
+                const id = e.target.id;
+                console.log('点击元素ID:', id);
+                
+                // 开始屏幕按钮
+                if (id === 'startBtn') {
+                    startGame();
+                } else if (id === 'rulesBtn') {
+                    showScreen('rulesScreen');
+                }
+                
+                // 规则屏幕按钮
+                else if (id === 'backToStartBtn') {
+                    showScreen('startScreen');
+                }
+                
+                // 暂停屏幕按钮
+                else if (id === 'resumeBtn') {
+                    togglePause();
+                } else if (id === 'restartBtn') {
+                    startGame();
+                } else if (id === 'exitBtn') {
+                    gameState = GAME_STATE.MENU;
+                    showScreen('startScreen');
+                    hideElement('gameHUD');
+                }
+                
+                // 结束屏幕按钮
+                else if (id === 'playAgainBtn') {
+                    console.log('点击再玩一次按钮');
+                    startGame();
+                } else if (id === 'shareBtn') {
+                    shareScore();
+                }
+                
+                // 游戏中按钮
+                else if (id === 'dashBtn' && gameState === GAME_STATE.PLAYING) {
+                    player.dash();
+                }
+            });
+        }
+        
+        // 显示指定屏幕
+        function showScreen(screenId) {
+            console.log('显示屏幕:', screenId);
+            // 隐藏所有屏幕
+            const screens = ['startScreen', 'rulesScreen', 'pauseScreen', 'gameOverScreen'];
+            screens.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.classList.add('hidden');
+                }
+            });
+            
+            // 显示指定屏幕
+            const targetScreen = document.getElementById(screenId);
+            if (targetScreen) {
+                targetScreen.classList.remove('hidden');
+            }
+        }
+        
+        // 显示元素
+        function showElement(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.classList.remove('hidden');
+            }
+        }
+        
+        // 隐藏元素
+        function hideElement(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.classList.add('hidden');
+            }
+        }
+        
+        // 开始游戏
+        function startGame() {
+            console.log('开始游戏');
+            // 重置游戏状态
+            gameState = GAME_STATE.PLAYING;
+            score = 0;
+            gameSpeed = INITIAL_SPEED;
+            gameTime = 0;
+            dashEnergy = 0;
+            isDashing = false;
+            dashTime = 0;
+            platforms = [];
+            peaches = [];
+            bigPeaches = [];
+            particles = [];
+            
+            // 重置玩家
+            player.x = 100;
+            player.y = GAME_HEIGHT / 2;
+            player.velocityY = 0;
+            player.isOnGround = false;
+            player.hasDoubleJumped = false;
+            player.state = PLAYER_STATE.RUNNING;
+            
+            // 生成初始平台
+            generateInitialPlatforms();
+            
+            // 更新UI
+            document.getElementById('scoreDisplay').textContent = '0';
+            updateDashEnergy();
+            showElement('gameHUD');
+            hideElement('startScreen');
+            hideElement('pauseScreen');
+            hideElement('gameOverScreen');
+            
+            // 开始游戏循环
+            if (gameLoopId) {
+                cancelAnimationFrame(gameLoopId);
+            }
+            lastTime = 0;
+            gameLoopId = requestAnimationFrame(gameLoop);
+            
+            console.log('游戏已开始');
+        }
+        
+        // 生成初始平台
+        function generateInitialPlatforms() {
+            // 清空现有平台
+            platforms = [];
+            
+            // 生成起始平台
+            platforms.push({
+                x: 0,
+                y: GAME_HEIGHT / 2 + 50,
+                width: PLATFORM_WIDTH * 3,
+                height: PLATFORM_HEIGHT
+            });
+            
+            // 生成后续平台
+            let lastX = platforms[0].x + platforms[0].width;
+            let lastY = platforms[0].y;
+            
+            for (let i = 0; i < 20; i++) {
+                // 随机平台宽度
+                const width = PLATFORM_WIDTH * (Math.random() > 0.7 ? 2 : 1);
+                
+                // 随机间隙
+                const gap = PLATFORM_WIDTH * (1 + Math.random() * 2);
+                
+                // 随机Y偏移
+                const yOffset = (Math.random() - 0.5) * PLATFORM_HEIGHT * 3;
+                const y = Math.max(PLATFORM_HEIGHT * 2, Math.min(GAME_HEIGHT - PLATFORM_HEIGHT * 2, lastY + yOffset));
+                
+                platforms.push({
+                    x: lastX + gap,
+                    y: y,
+                    width: width,
+                    height: PLATFORM_HEIGHT
+                });
+                
+                lastX = platforms[platforms.length - 1].x + platforms[platforms.length - 1].width;
+                lastY = y;
+                
+                // 随机生成桃子
+                if (Math.random() > 0.7) {
+                    generatePeach(platforms[platforms.length - 1].x + platforms[platforms.length - 1].width / 2 - PLATFORM_WIDTH / 4, platforms[platforms.length - 1].y);
+                }
+                
+                // 随机生成大桃子
+                if (Math.random() > 0.95) {
+                    generateBigPeach(platforms[platforms.length - 1].x + platforms[platforms.length - 1].width / 2 - PLATFORM_WIDTH / 2, platforms[platforms.length - 1].y);
+                }
+            }
+        }
+        
+        // 生成平台
+        function generatePlatform(x) {
+            // 随机平台宽度
+            const width = PLATFORM_WIDTH * (Math.random() > 0.7 ? 2 : 1);
+            
+            // 随机间隙
+            const gap = PLATFORM_WIDTH * (1 + Math.random() * 2);
+            
+            // 获取最后一个平台的位置
+            const lastPlatform = platforms[platforms.length - 1];
+            const lastY = lastPlatform.y;
+            
+            // 随机Y偏移
+            const yOffset = (Math.random() - 0.5) * PLATFORM_HEIGHT * 3;
+            const y = Math.max(PLATFORM_HEIGHT * 2, Math.min(GAME_HEIGHT - PLATFORM_HEIGHT * 2, lastY + yOffset));
+            
+            platforms.push({
+                x: x + gap,
+                y: y,
+                width: width,
+                height: PLATFORM_HEIGHT
+            });
+            
+            return platforms[platforms.length - 1];
+        }
+        
+        // 生成桃子
+        function generatePeach(x, y) {
+            peaches.push({
+                x: x,
+                y: y - PLATFORM_HEIGHT,
+                width: PLATFORM_WIDTH / 2,
+                height: PLATFORM_WIDTH / 2,
+                collected: false
+            });
+        }
+        
+        // 生成大桃子
+        function generateBigPeach(x, y) {
+            bigPeaches.push({
+                x: x,
+                y: y - PLATFORM_HEIGHT * 1.5,
+                width: PLATFORM_WIDTH,
+                height: PLATFORM_WIDTH,
+                collected: false,
+                pulseTime: 0
+            });
+        }
+        
+        // 游戏循环
+        function gameLoop(timestamp) {
+            // 计算时间增量
+            if (!lastTime) lastTime = timestamp;
+            const deltaTime = Math.min((timestamp - lastTime) / 1000, 0.1);
+            lastTime = timestamp;
+            
+            // 更新游戏状态
+            if (gameState === GAME_STATE.PLAYING) {
+                update(deltaTime);
+            }
+            
+            // 渲染游戏
+            render();
+            
+            // 继续游戏循环
+            if (gameState === GAME_STATE.PLAYING) {
+                gameLoopId = requestAnimationFrame(gameLoop);
+            }
+        }
+        
+        // 更新游戏逻辑
+        function update(deltaTime) {
+            // 更新游戏时间
+            gameTime += deltaTime;
+            
+            // 更新游戏速度
+            if (gameTime < SPEED_UP_DURATION) {
+                // 线性增长速度
+                gameSpeed = INITIAL_SPEED + (MAX_SPEED - INITIAL_SPEED) * (gameTime / SPEED_UP_DURATION);
+            } else {
+                gameSpeed = MAX_SPEED;
+            }
+            
+            // 更新冲刺状态
+            if (isDashing) {
+                dashTime -= deltaTime;
+                if (dashTime <= 0) {
+                    isDashing = false;
+                    player.state = PLAYER_STATE.RUNNING;
+                }
+            }
+            
+            // 更新玩家
+            player.update(deltaTime);
+            
+            // 更新平台
+            updatePlatforms(deltaTime);
+            
+            // 更新桃子
+            updatePeaches(deltaTime);
+            
+            // 检测碰撞
+            checkCollisions();
+        }
+        
+        // 更新平台
+        function updatePlatforms(deltaTime) {
+            const speed = isDashing ? DASH_SPEED : gameSpeed;
+            
+            // 移动平台
+            for (let i = platforms.length - 1; i >= 0; i--) {
+                platforms[i].x -= speed * deltaTime;
+                
+                // 移除屏幕外的平台
+                if (platforms[i].x + platforms[i].width < 0) {
+                    platforms.splice(i, 1);
+                }
+            }
+            
+            // 生成新平台
+            const lastPlatform = platforms[platforms.length - 1];
+            if (lastPlatform && lastPlatform.x + lastPlatform.width < GAME_WIDTH + 200) {
+                const newPlatform = generatePlatform(lastPlatform.x + lastPlatform.width);
+                
+                // 随机生成桃子
+                if (Math.random() > 0.7) {
+                    generatePeach(newPlatform.x + newPlatform.width / 2 - PLATFORM_WIDTH / 4, newPlatform.y);
+                }
+                
+                // 随机生成大桃子
+                if (Math.random() > 0.95) {
+                    generateBigPeach(newPlatform.x + newPlatform.width / 2 - PLATFORM_WIDTH / 2, newPlatform.y);
+                }
+            }
+        }
+        
+        // 更新桃子
+        function updatePeaches(deltaTime) {
+            const speed = isDashing ? DASH_SPEED : gameSpeed;
+            
+            // 移动小桃子
+            for (let i = peaches.length - 1; i >= 0; i--) {
+                peaches[i].x -= speed * deltaTime;
+                
+                // 移除屏幕外的桃子
+                if (peaches[i].x + peaches[i].width < 0) {
+                    peaches.splice(i, 1);
+                }
+            }
+            
+            // 移动大桃子
+            for (let i = bigPeaches.length - 1; i >= 0; i--) {
+                bigPeaches[i].x -= speed * deltaTime;
+                bigPeaches[i].pulseTime += deltaTime;
+                
+                // 移除屏幕外的大桃子
+                if (bigPeaches[i].x + bigPeaches[i].width < 0) {
+                    bigPeaches.splice(i, 1);
+                }
+            }
+        }
+        
+        // 检测碰撞
+        function checkCollisions() {
+            // 平台碰撞
+            player.isOnGround = false;
+            
+            for (const platform of platforms) {
+                if (
+                    player.x + player.width > platform.x &&
+                    player.x < platform.x + platform.width &&
+                    player.y + player.height > platform.y &&
+                    player.y + player.height < platform.y + 20 &&
+                    player.velocityY > 0
+                ) {
+                    player.y = platform.y - player.height;
+                    player.velocityY = 0;
+                    player.isOnGround = true;
+                    player.hasDoubleJumped = false;
+                }
+            }
+            
+            // 桃子碰撞
+            for (const peach of peaches) {
+                if (!peach.collected &&
+                    player.x + player.width > peach.x &&
+                    player.x < peach.x + peach.width &&
+                    player.y + player.height > peach.y &&
+                    player.y < peach.y + peach.height) {
+                    
+                    peach.collected = true;
+                    score += PEACH_SCORE;
+                    dashEnergy += PEACH_SCORE;
+                    document.getElementById('scoreDisplay').textContent = score;
+                    updateDashEnergy();
+                    playSound('collect');
+                }
+            }
+            
+            // 大桃子碰撞
+            for (const bigPeach of bigPeaches) {
+                if (!bigPeach.collected &&
+                    player.x + player.width > bigPeach.x &&
+                    player.x < bigPeach.x + bigPeach.width &&
+                    player.y + player.height > bigPeach.y &&
+                    player.y < bigPeach.y + bigPeach.height) {
+                    
+                    bigPeach.collected = true;
+                    score += BIG_PEACH_SCORE;
+                    dashEnergy += BIG_PEACH_SCORE;
+                    document.getElementById('scoreDisplay').textContent = score;
+                    updateDashEnergy();
+                    playSound('bigCollect');
+                }
+            }
+            
+            // 移除已收集的桃子
+            peaches = peaches.filter(peach => !peach.collected);
+            bigPeaches = bigPeaches.filter(bigPeach => !bigPeach.collected);
+        }
+        
+        // 更新筋斗云能量
+        function updateDashEnergy() {
+            const percentage = Math.min(100, (dashEnergy / DASH_COST) * 100);
+            document.getElementById('energyFill').style.width = `${percentage}%`;
+            document.getElementById('dashBtn').disabled = dashEnergy < DASH_COST;
+        }
+        
+        // 渲染游戏
+        function render() {
+            // 清空画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制背景
+            if (images.background) {
+                ctx.drawImage(images.background, 0, 0, GAME_WIDTH, GAME_HEIGHT);
+            } else {
+                // 备用背景
+                ctx.fillStyle = '#87CEEB';
+                ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+            }
+            
+            // 绘制平台
+            for (const platform of platforms) {
+                if (images.platform) {
+                    ctx.drawImage(
+                        images.platform,
+                        platform.x,
+                        platform.y,
+                        platform.width,
+                        platform.height
+                    );
+                } else {
+                    // 备用平台
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+                }
+            }
+            
+            // 绘制桃子
+            for (const peach of peaches) {
+                if (images.peach) {
+                    ctx.drawImage(
+                        images.peach,
+                        peach.x,
+                        peach.y,
+                        peach.width,
+                        peach.height
+                    );
+                } else {
+                    // 备用桃子
+                    ctx.fillStyle = '#FF6347';
+                    ctx.beginPath();
+                    ctx.arc(peach.x + peach.width / 2, peach.y + peach.height / 2, peach.width / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            
+            // 绘制大桃子
+            for (const bigPeach of bigPeaches) {
+                // 大桃子脉冲效果
+                const pulse = 1 + 0.1 * Math.sin(bigPeach.pulseTime * 10);
+                
+                ctx.save();
+                ctx.translate(
+                    bigPeach.x + bigPeach.width / 2,
+                    bigPeach.y + bigPeach.height / 2
+                );
+                ctx.scale(pulse, pulse);
+                
+                if (images.bigPeach) {
+                    ctx.drawImage(
+                        images.bigPeach,
+                        -bigPeach.width / 2,
+                        -bigPeach.height / 2,
+                        bigPeach.width,
+                        bigPeach.height
+                    );
+                } else {
+                    // 备用大桃子
+                    ctx.fillStyle = '#FFD700';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, bigPeach.width / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                ctx.restore();
+            }
+            
+            // 绘制玩家
+            if (images.player) {
+                player.draw();
+            } else {
+                // 备用玩家
+                ctx.fillStyle = '#FF4500';
+                ctx.fillRect(player.x, player.y, player.width, player.height);
+            }
+        }
+        
+        // 切换暂停状态
+        function togglePause() {
+            if (gameState === GAME_STATE.PLAYING) {
+                gameState = GAME_STATE.PAUSED;
+                showScreen('pauseScreen');
+                if (gameLoopId) {
+                    cancelAnimationFrame(gameLoopId);
+                    gameLoopId = null;
+                }
+            } else if (gameState === GAME_STATE.PAUSED) {
+                gameState = GAME_STATE.PLAYING;
+                hideElement('pauseScreen');
+                lastTime = 0;
+                gameLoopId = requestAnimationFrame(gameLoop);
+            }
+        }
+        
+        // 游戏结束
+        function gameOver() {
+            console.log('游戏结束');
+            gameState = GAME_STATE.GAME_OVER;
+            player.state = PLAYER_STATE.DEAD;
+            playSound('gameOver');
+            
+            // 停止游戏循环
+            if (gameLoopId) {
+                cancelAnimationFrame(gameLoopId);
+                gameLoopId = null;
+            }
+            
+            // 更新最高分
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('dasheng-highscore', highScore);
+            }
+            
+            // 更新UI
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('highScore').textContent = highScore;
+            showScreen('gameOverScreen');
+            hideElement('gameHUD');
+            
+            console.log('游戏结束屏幕已显示');
+        }
+        
+        // 分享成绩
+        function shareScore() {
+            console.log('分享成绩:', score);
+            // 检查是否在微信环境
+            if (typeof WeixinJSBridge !== 'undefined') {
+                // 微信分享
+                WeixinJSBridge.invoke('shareTimeline', {
+                    title: `我在《大圣逃亡》中获得了${score}分！`,
+                    desc: '快来挑战我，看看谁能跑得更远！',
+                    link: window.location.href,
+                    imgUrl: images.player ? images.player.src : ''
+                });
+            } else {
+                // 复制链接到剪贴板
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(`${window.location.href}?score=${score}`)
+                        .then(() => {
+                            alert('链接已复制到剪贴板，可以分享给好友了！');
+                        })
+                        .catch(err => {
+                            console.error('无法复制链接: ', err);
+                            alert(`我的得分是${score}分！快来挑战我吧！`);
+                        });
+                } else {
+                    alert(`我的得分是${score}分！快来挑战我吧！`);
+                }
+            }
+        }
+        
+        // 播放音效
+        function playSound(soundName) {
+            if (sounds[soundName]) {
+                try {
+                    sounds[soundName]();
+                } catch (e) {
+                    console.error('播放音效失败:', e);
+                }
+            }
+        }
+        
+        // 初始化游戏
+        window.addEventListener('load', function() {
+            console.log('页面加载完成，初始化游戏');
+            init();
+        });
+        
+        // 防止页面滚动
+        document.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+    </script>
+</body>
+</html>
